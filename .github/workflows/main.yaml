@@ -22,17 +22,13 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
 
-    - name: Build Docker images for Frontend and Backend
-      run: |
-        docker buildx build -t ${{ secrets.ACR_LOGIN_SERVER }}/pact-backend:latest .
-
     - name: Log in to ACR
       run: |
         az acr login --name ${{ secrets.ACR_NAME }}
 
-    - name: Push Docker images to ACR
+    - name: Build and push Docker images for Frontend and Backend
       run: |
-        docker push ${{ secrets.ACR_LOGIN_SERVER }}/pact-backend:latest
+        docker build --push -t ${{ secrets.ACR_LOGIN_SERVER }}/pact-backend:latest .
 
     - name: Build and deploy Container App
       uses: azure/container-apps-deploy-action@v1
