@@ -7,10 +7,10 @@ authors = [
 ]
 license = {text = "MIT"}
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "^3.13"
 fastapi = {version = "^0.115.6", extras = ["standard"]}
 motor = "^3.6.1"
 passlib = {version = "^1.7.4", extras = ["bcrypt"]}
@@ -20,6 +20,13 @@ pydantic-settings = "^2.7.1"
 python-dotenv = "^1.0.1"
 uvicorn = "^0.34.0"
 azure-identity = "^1.19.0"
+langchain = "^0.3.20"
+openai = {extras = ["azure"], version = "^1.66.3"}
+azure-core = "^1.32.0"
+azure-ai-generative = "^1.0.0b11"
+langchain-openai = "^0.3.8"
+langchain-community = "^0.3.19"
+azure-ai-evaluation = "1.1.0"
 
 
 [build-system]
