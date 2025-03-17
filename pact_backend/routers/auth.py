@@ -53,14 +53,6 @@ async def check_username_availability(username: str):
 
 @router.post("/sign_up")
 async def sign_up(payload: SignUpRequest):
-    college_name = payload.college_name
-    college_name = college_name.lower()
-    college_name = re.sub(r"(\s|\W)*", "", college_name)
-    if invalid_college(college_name=college_name):
-        return JSONResponse(
-            status_code=409,
-            content={"status": "failed", "message": "Invalid college name"}
-        )
     try:
         user = await config.db["user"].find_one({"username": payload.username})
         if user:
@@ -75,12 +67,11 @@ async def sign_up(payload: SignUpRequest):
 
         try:
             data = SignUpRequest(
-                username=payload.username, email=payload.email, password=password, full_name=payload.full_name.title(), phone_number=payload.phone_number, college_name=payload.college_name.upper(), department=payload.department.upper(), graduation_year=payload.graduation_year
+                username=payload.username, email=payload.email, password=password, full_name=payload.full_name.title()
             )
         except Exception as e:
             return JSONResponse({"status": "failed", "message": f"Invalid field details. Error: {e.json()}"}, status_code=422)
         user_data = data.__dict__
-        user_data["role"] = "participant".upper()
         await config.db["user"].insert_one(user_data)
         return {"status": "success", "message": "User successfully created"}
 
