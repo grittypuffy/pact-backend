@@ -1,0 +1,27 @@
+[project]
+name = "pact-backend"
+version = "0.1.0"
+description = "Backend for PACT"
+authors = [
+    {name = "Keerthana",email = "grittypuffy@riseup.net"}
+]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.12"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = {version = "^0.115.6", extras = ["standard"]}
+motor = "^3.6.1"
+passlib = {version = "^1.7.4", extras = ["bcrypt"]}
+pyjwt = "^2.10.1"
+pydantic = {version = "^2.10.5", extras = ["email"]}
+pydantic-settings = "^2.7.1"
+python-dotenv = "^1.0.1"
+uvicorn = "^0.34.0"
+azure-identity = "^1.19.0"
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
