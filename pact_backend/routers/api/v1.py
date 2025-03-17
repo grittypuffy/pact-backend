@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
-from revil_backend.routers.auth import router as auth_router
-from revil_backend.helpers.auth import decode_jwt
+from pact_backend.routers.auth import router as auth_router
+from pact_backend.helpers.auth import decode_jwt
 
 router = APIRouter()
 
