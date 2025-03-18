@@ -21,4 +21,6 @@ RUN poetry install
 
 RUN poetry add gunicorn
 
+EXPOSE 8000
+
 ENTRYPOINT ["poetry", "run", "python", "-m", "gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "pact_backend.server:app"]
