@@ -11,7 +11,7 @@ class BotHandler:
     Handles communication with Azure OpenAI models using LangChain.
     """
 
-    def __init__(self, temperature: float = 0, max_tokens: int = 200):
+    def __init__(self, temperature: float = 0, max_tokens: int = 500):
         """
         Initializes the BotHandler with model configurations.
         
