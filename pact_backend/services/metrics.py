@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 import os
 
 
-from response import BotHandler
+from .response import BotHandler
 
 
 load_dotenv()
@@ -34,13 +34,13 @@ class Metrics:
     
     def evaluate_grammar(self, query):
      
-        prompt = f"Evaluate the grammatical correctness of the following sentence and return a percentage of correctness (0-100%):\n\n{query}"
+        prompt = f"Evaluate the grammatical correctness of the following sentence and return only the score from 1 to 5:\n\n{query}"
         result = self.bot.get_response(prompt)
         return result.get("response", "Error in evaluation")
     
     def evaluate_spell_check(self,query):
        
-        prompt = f"Evaluate the spelling accuracy of the following sentence and return a percentage of correctness (0-100%):\n\n{query}"
+        prompt = f"Evaluate the spelling accuracy of the following sentence and return only the score from 1 to 5:\n\n{query}"
         result = self.bot.get_response(prompt)
         return result.get("response", "Error in evaluation")
     
