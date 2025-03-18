@@ -11,7 +11,7 @@ from fastapi.responses import JSONResponse
 from ..config import AppConfig, get_config
 from ..models.auth import SignInRequest, SignUpRequest, Token
 from ..helpers.auth import get_hashed_password, verify_password, sign_jwt, decode_jwt
-from ..services.response_generator import BotHandler
+from ..services.response import BotHandler
 
 router = APIRouter()
 
