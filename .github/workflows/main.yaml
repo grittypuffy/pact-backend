@@ -26,14 +26,15 @@ jobs:
       run: |
         az acr login --name ${{ secrets.ACR_NAME }}
 
-    - name: Build and push Docker images for Frontend and Backend
+    - name: Build and push Docker image for Backend
       run: |
         docker build --push -t ${{ secrets.ACR_LOGIN_SERVER }}/pact-backend:latest .
 
-    - name: Build and deploy Container App
+    - name: Deploy Container App
       uses: azure/container-apps-deploy-action@v1
       with:
         acrName: ${{ secrets.ACR_NAME }}
         containerAppName: ${{ secrets.CA_BACKEND_NAME }}
         resourceGroup: ${{ secrets.RG_NAME }}
         imageToDeploy: ${{ secrets.ACR_LOGIN_SERVER }}/pact-backend:latest
+        containerAppEnvironment: ${{ secrets.CAE_NAME }}
