@@ -23,4 +23,5 @@ RUN poetry add gunicorn
 
 EXPOSE 8000
 
-ENTRYPOINT ["poetry", "run", "python", "-m", "gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "pact_backend.server:app"]
+ENTRYPOINT ["poetry", "run", "python", "-m", "gunicorn", "-w", "2","-b", "0.0.0.0:8000","pact_backend.server:app"]
+# ENTRYPOINT ["poetry", "run", "python", "-m", "uvicorn", "--host", "0.0.0.0", "--port", "8000", "--workers", "2", "pact_backend.server:app"]
