@@ -16,7 +16,7 @@ class JWTMiddleware(BaseHTTPMiddleware):
             request.url.path.startswith("/docs")
             or request.url.path.startswith("/openapi.json")
             or request.url.path.startswith("/api/v1/auth")
-            or request.method() == "OPTIONS"
+            # or request.method() == "OPTIONS"
         ):
             token: Optional[str] = request.cookies.get("token")
             if token is not None:
