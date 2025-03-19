@@ -3,6 +3,7 @@ import os
 import re
 import time
 import datetime
+from pydantic import BaseModel
 from typing import List, Annotated
 
 from fastapi import APIRouter, Response, Request, Cookie
@@ -17,6 +18,12 @@ from ..services.response import BotHandler
 router = APIRouter()
 
 config: AppConfig = get_config()
+
+class Metric_Request(BaseModel):
+    query: str
+    answer: str
+    opt_query: str
+    opt_answer: str
 
 
 @router.get("/{user_prompt}")
@@ -46,62 +53,73 @@ async def get_bot_response(user_prompt: str):
             content={"status": "failed", "message": "An internal error occured"},
         )
 
+
 @router.post("/metrics")
-async def get_metrics(query:str, answer: str, opt_query: str, opt_answer: str):
+async def get_metrics(payload: Metric_Request):
     try:
         metrics = Metrics()
-        response = metrics.evaluate_all(query, answer)
-        opt_response = metrics.evaluate_all(opt_query, opt_answer)
-       
+        response = metrics.evaluate_all(payload.query, payload.answer)
+        opt_response = metrics.evaluate_all(payload.opt_query, payload.opt_answer)
+
         evaluation = {}
         opt_evaluation = {}
-       
-        evaluation["grammar"] = int(response['grammar'])
-        opt_evaluation["grammar"] = int(opt_response['grammar'])
-       
-        evaluation["spell_check"] = int(response['spell_check'])
-        opt_evaluation["spell_check"] = int(opt_response['spell_check'])
-       
+
+        evaluation["grammar"] = int(response["grammar"] ) + 5
+        opt_evaluation["grammar"] = int(opt_response["grammar"]) + 5
+
+        evaluation["spell_check"] = int(response["spell_check"]) + 5
+        opt_evaluation["spell_check"] = int(opt_response["spell_check"]) + 5
+
         maxi = -1
-        if "sensitive_info" in response and isinstance(response["sensitive_info"], list) and response["sensitive_info"]:
+        if (
+            "sensitive_info" in response
+            and isinstance(response["sensitive_info"], list)
+            and response["sensitive_info"]
+        ):
             entities = response["sensitive_info"][0].entities
             for ele in entities:
-                maxi = max(maxi, ele.get('confidence_score', -1))
+                maxi = max(maxi, ele.get("confidence_score", -1))
 
-            maxi = int((maxi * 10) // 2)
+            maxi = int(maxi * 10)
         else:
             maxi = -1
         evaluation["sensitive_info"] = maxi
-        
+
         maxi = -1
-        if "sensitive_info" in opt_response and isinstance(opt_response["sensitive_info"], list) and opt_response["sensitive_info"]:
+        if (
+            "sensitive_info" in opt_response
+            and isinstance(opt_response["sensitive_info"], list)
+            and opt_response["sensitive_info"]
+        ):
             entities = opt_response["sensitive_info"][0].entities
             for ele in entities:
-                maxi = max(maxi, ele.get('confidence_score', -1))
+                maxi = max(maxi, ele.get("confidence_score", -1))
 
-            maxi = int((maxi * 10) // 2)
+            maxi = int(maxi * 10)
         else:
             maxi = -1
         opt_evaluation["sensitive_info"] = maxi
-        
-        evaluation["violence"] = response["violence"]["violence_score"]
-        opt_evaluation["violence"] = opt_response["violence"]["violence_score"]
 
-        evaluation["bias_gender"] = response["bias_gender"]["sexual_score"]
-        opt_evaluation["bias_gender"] = opt_response["bias_gender"]["sexual_score"]
-        
-        evaluation["self_harm"] = response["bias_self_harm"]["self_harm_score"]
-        opt_evaluation["self_harm"] = opt_response["bias_self_harm"]["self_harm_score"]
+        evaluation["violence"] = int(response["violence"]["violence_score"] * 10 / 7)
+        opt_evaluation["violence"] = int(opt_response["violence"]["violence_score"] * 10 / 7)
 
-        evaluation["hate_unfairness"] = response["hate_unfairness"]["hate_unfairness_score"]
-        opt_evaluation["hate_unfairness"] = opt_response["hate_unfairness"]["hate_unfairness_score"]
+        evaluation["bias_gender"] = int(response["bias_gender"]["sexual_score"] * 10 / 7)
+        opt_evaluation["bias_gender"] = int(opt_response["bias_gender"]["sexual_score"] * 10 / 7)
+
+        evaluation["self_harm"] = int(response["bias_self_harm"]["self_harm_score"] * 10 / 7)
+        opt_evaluation["self_harm"] = int (opt_response["bias_self_harm"]["self_harm_score"] * 10 / 7)
+
+        evaluation["hate_unfairness"] = int(response["hate_unfairness"]["hate_unfairness_score"] * 10 / 7)
+        opt_evaluation["hate_unfairness"] = int(opt_response["hate_unfairness"]["hate_unfairness_score"] * 10 / 7)
+        
 
         flag = "not computed"
         for key in response["jailbreak"]:
             if response["jailbreak"][key] == True:
                 flag = True
                 break
-            else : flag = False
+            else:
+                flag = False
         evaluation["jailbreak"] = flag
 
         flag = "not computed"
@@ -109,17 +127,15 @@ async def get_metrics(query:str, answer: str, opt_query: str, opt_answer: str):
             if opt_response["jailbreak"][key] == True:
                 flag = True
                 break
-            else : flag = False
+            else:
+                flag = False
         opt_evaluation["jailbreak"] = flag
 
         return JSONResponse(
             status_code=200,
             content={
                 "status": "success",
-                "data": {
-                    "metrics": evaluation,
-                    "opt_metrics": opt_evaluation
-                },
+                "data": {"metrics": evaluation, "opt_metrics": opt_evaluation},
             },
         )
     except Exception as e:
@@ -128,4 +144,3 @@ async def get_metrics(query:str, answer: str, opt_query: str, opt_answer: str):
             status_code=500,
             content={"status": "failed", "message": "An internal error occured"},
         )
-    
