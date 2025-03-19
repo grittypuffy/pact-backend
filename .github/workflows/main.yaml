@@ -44,7 +44,8 @@ jobs:
         azcliversion: latest
         inlineScript: |
           az containerapp revision copy -n ${{ secrets.CA_BACKEND_NAME }} \
-          -g ${{ secrets.RG_NAME }} --revision-suffix ${{ github.run_id }}-${{ github.run_attempt }}
+          -g ${{ secrets.RG_NAME }} --revision-suffix ${{ github.run_id }}-${{ github.run_attempt }} \
+          --image ${{ secrets.ACR_LOGIN_SERVER }}/pact-backend:${{ steps.vars.outputs.short_sha }}
 
     # - name: Deploy Container App
     #  uses: azure/container-apps-deploy-action@v1
