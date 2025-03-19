@@ -1,17 +1,20 @@
 from langchain_community.callbacks import get_openai_callback
 from langchain_openai import AzureChatOpenAI
-from dotenv import load_dotenv
 import os
+from ..config import AppConfig, get_config
+from ..helpers.singleton import singleton
 
-# Load environment variables from .env file
-load_dotenv()
 
+config: AppConfig = get_config()
+
+
+@singleton
 class BotHandler:
     """
     Handles communication with Azure OpenAI models using LangChain.
     """
 
-    def __init__(self, temperature: float = 0, max_tokens: int = 200):
+    def __init__(self, temperature: float = 0, max_tokens: int = 300):
         """
         Initializes the BotHandler with model configurations.
         
@@ -20,25 +23,22 @@ class BotHandler:
             max_tokens (int): Maximum tokens for the response (default = 200).
         """
         
-        self.model = os.getenv("AZURE_OPENAI_MODEL")
+        self.model = config.env.azure_openai_model_name
         self.temperature = temperature
         self.max_tokens = max_tokens
 
         # Fetch model-specific environment variables
-        self.api_key = os.getenv("AZURE_OPENAI_API_KEY")
-        self.endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
-        self.deployment = os.getenv("AZURE_OPENAI_DEPLOYMENT")
-        self.api_version = os.getenv("AZURE_OPENAI_API_VERSION")
-
-        if not all([self.api_key, self.endpoint, self.deployment, self.api_version, self.model]):
-            raise EnvironmentError("Missing environment variables for Azure OpenAI.")
+        self.api_key = config.env.azure_openai_api_key
+        self.endpoint = config.env.azure_openai_endpoint
+        self.deployment = config.env.azure_openai_deployment
+        self.api_version = config.env.azure_openai_api_version
 
         # Initialize Azure OpenAI LLM
         self.llm = AzureChatOpenAI(
             openai_api_key=self.api_key,
             azure_endpoint=self.endpoint,
-            azure_deployment=self.deployment,  # Deployment Name
-            model=self.model,  # Explicitly specify model
+            azure_deployment=self.deployment,
+            model=self.model,
             api_version=self.api_version,
             temperature=self.temperature,
             max_tokens=self.max_tokens,
@@ -73,9 +73,3 @@ class BotHandler:
         return {
             "response": response
         }
-
-# # Example usage
-# if __name__ == "__main__":
-#     bot = BotHandler()
-#     result = bot.get_response("What is LangChain?")
-#     print(result)

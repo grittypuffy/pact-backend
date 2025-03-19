@@ -20,6 +20,19 @@ class EnvVarConfig(BaseSettings):
     azure_tenant_id: str
     azure_client_secret: str
 
+    azure_ai_project_name: str
+    azure_rg_name: str
+    azure_ai_endpoint: str
+    azure_language_api_key: str
+    azure_language_endpoint: str
+
+    # Azure OpenAI configuration
+    azure_openai_api_key: str
+    azure_openai_endpoint: str
+    azure_openai_deployment: str
+    azure_openai_api_version: str
+    azure_openai_model_name: str    
+
     class EnvVarConfig:
         env_file = ".env"
         env_file_encoding = "utf-8"

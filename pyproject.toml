@@ -27,6 +27,8 @@ azure-ai-generative = "^1.0.0b11"
 langchain-openai = "^0.3.8"
 langchain-community = "^0.3.19"
 azure-ai-evaluation = "1.1.0"
+azure-ai-textanalytics = "^5.3.0"
+marshmallow = "<3.20"
 
 
 [build-system]

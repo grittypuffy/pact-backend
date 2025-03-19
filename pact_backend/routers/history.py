@@ -3,7 +3,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from ..models.history import HistoryModel
 from bson import ObjectId
-from ..services.response_generator import BotHandler
+from ..services.response import BotHandler
 from ..helpers.serializer import serializer
 
 router = APIRouter()
