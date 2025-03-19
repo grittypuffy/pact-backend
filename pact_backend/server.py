@@ -23,7 +23,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[config.env.frontend_url],
     allow_methods=cors_allowed_methods,
-    allow_headers=cors_allowed_headers,
+    allow_headers=["*"],
     expose_headers=["*"],
     allow_credentials=True,
 )
