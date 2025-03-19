@@ -26,9 +26,17 @@ jobs:
       run: |
         az acr login --name ${{ secrets.ACR_NAME }}
 
+    - name: Set short git commit SHA
+      id: vars
+      run: |
+        calculatedSha=$(git rev-parse --short ${{ github.sha }})
+        echo "::set-output name=short_sha::$calculatedSha"
+
+
     - name: Build and push Docker image for Backend
       run: |
-        docker build --push -t ${{ secrets.ACR_LOGIN_SERVER }}/pact-backend:latest .
+        docker build --push -t ${{ secrets.ACR_LOGIN_SERVER }}/pact-backend:${{ steps.vars.outputs.short_sha }} .
+
 
     - name: Deploy container app
       uses: azure/cli@v2
@@ -37,6 +45,7 @@ jobs:
         inlineScript: |
           az containerapp revision copy -n ${{ secrets.CA_BACKEND_NAME }} \
           -g ${{ secrets.RG_NAME }} --revision-suffix ${{ github.run_id }}-${{ github.run_attempt }}
+
     # - name: Deploy Container App
     #  uses: azure/container-apps-deploy-action@v1
     #  with:
