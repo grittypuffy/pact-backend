@@ -27,7 +27,7 @@ async def add_history(user_msg: str,req: Request):
         return JSONResponse(status_code=500,content={"status": "failed","message": "Internal server error"})
 
 @router.get("/get")
-async def getistory(req:Request):
+async def get_history(req:Request):
     try:
         user_id = req.state.user.get("user_id")
         collection = db['history']
