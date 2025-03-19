@@ -24,7 +24,6 @@ class JWTMiddleware(BaseHTTPMiddleware):
                     payload = jwt.decode(
                         token, config.env.jwt_secret, algorithms=["HS512"])
                     request.state.user = payload
-
                 except jwt.ExpiredSignatureError:
                     return JSONResponse(
                         status_code=401, content={"status": "failed", "message": "JWT token has expired"})
