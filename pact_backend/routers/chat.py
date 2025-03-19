@@ -1,8 +1,10 @@
-from bson import ObjectId
-from ..models.chat import ChatModel, RequestModel
-from ..config import AppConfig, get_config
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
+
+from bson import ObjectId
+
+from ..config import AppConfig, get_config
+from ..models.chat import ChatModel, RequestModel
 from ..helpers.serializer import serializer
 
 router = APIRouter()
@@ -10,7 +12,7 @@ config: AppConfig = get_config()
 db = config.db
 
 @router.post("/add")
-async def addChat(body:RequestModel, req: Request):
+async def add_chat(body:RequestModel, req: Request):
     try:
         body_data = {}
         body = body.dict()
@@ -78,7 +80,7 @@ async def addChat(body:RequestModel, req: Request):
 #         return JSONResponse(status_code=500,content={"status": "failed","message": "Internal server error"})
 
 @router.get("/get")
-async def getChat(req:Request):
+async def get_chat(req:Request):
     try:
         user_id = req.state.user.get("user_id")
         HistoryCollection = db['history']
