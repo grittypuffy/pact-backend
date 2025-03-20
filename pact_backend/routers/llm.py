@@ -1,23 +1,28 @@
 import asyncio
 import os
-import math
-import time
-import datetime
 from pydantic import BaseModel
-from typing import List, Annotated
+import logging
+from typing import List, Annotated, Optional
 
-from fastapi import APIRouter, Response, Request, Cookie
+import azure.cognitiveservices.speech as speechsdk
+from fastapi import APIRouter, Response, Request, Cookie, File, Form, UploadFile
 from fastapi.responses import JSONResponse
 
-from ..services.metrics import Metrics
 from ..config import AppConfig, get_config
-from ..models.auth import SignInRequest, SignUpRequest, Token
 from ..helpers.auth import get_hashed_password, verify_password, sign_jwt, decode_jwt
+from ..helpers.filename import get_filename_hash
+from ..models.auth import SignInRequest, SignUpRequest, Token
+from ..services.metrics import Metrics
 from ..services.response import BotHandler
+from ..services.upload import FileUpload
 
 router = APIRouter()
 
 config: AppConfig = get_config()
+
+upload_client: FileUpload = FileUpload()
+
+bot_handler = BotHandler()
 
 
 class Metric_Request(BaseModel):
@@ -30,7 +35,6 @@ class Metric_Request(BaseModel):
 @router.get("/{user_prompt}")
 async def get_bot_response(user_prompt: str):
     try:
-        bot_handler = BotHandler()
         bot_response = bot_handler.get_response(user_prompt)
         opt_prompt = bot_handler.get_response(
             f'Please analyze the given prompt and optimize it by removing any grammatical errors, spelling mistakes, biases (such as gender, racial, or cultural biases), sensitive or personal information, inappropriate content (such as self-harm, violence, or explicit material), and any unclear or incomplete phrasing. Ensure the optimized prompt is structured for clarity, neutrality, and inclusivity, making it more effective in generating meaningful and constructive responses only prompt no explanation."{user_prompt}"'
@@ -48,7 +52,7 @@ async def get_bot_response(user_prompt: str):
             },
         )
     except Exception as e:
-        print(e)
+        logging.error(e)
         return JSONResponse(
             status_code=500,
             content={"status": "failed", "message": "An internal error occured"},
@@ -151,7 +155,80 @@ async def get_metrics(payload: Metric_Request):
             },
         )
     except Exception as e:
-        print(e)
+        logging.error(e)
+        return JSONResponse(
+            status_code=500,
+            content={"status": "failed", "message": "An internal error occured"},
+        )
+
+
+@router.post("/voice")
+async def get_voice_response(audio: Annotated[UploadFile, File()], language_code: str = Form("en-US"), token: str = Cookie(None)):
+    if token and not verify_jwt(token):
+        return JSONResponse(status_code=409, content={"status": "failed", "message": "Invalid credentials"})
+    token = None
+    username = None
+    user_id = None
+    if token:
+        token = decode_jwt(token)
+        user_id = token.get("user_id")
+        username = token.get("username")
+    content_type = audio.content_type
+    file_path, url = await upload_client.upload_file(user_id, username, audio)
+
+    if not url:
+        return JSONResponse(
+            status_code=422,
+            content={
+                "status": "failed",
+                "data": None,
+                "message": "Failed to process voice content"
+            }
+        )
+    prompt = None
+    match content_type:
+        case "audio/wav":
+            transcription = await upload_client.get_audio_transcription(file_path, language_code)
+            if (transcripted_text := transcription.get("data")) and not transcription.get("error"):
+                prompt = transcripted_text
+
+        case _:
+            return JSONResponse(
+                status_code=406,
+                content={
+                    "status": "failed",
+                    "data": None,
+                    "message": "Unsupported format"
+                },
+            )
+    try:
+        if not prompt:
+            return JSONResponse(
+                status_code=406,
+                content={
+                    "status": "failed",
+                    "data": None,
+                    "message": "There was an error while processing the prompt"
+                },
+            )         
+        bot_response = bot_handler.get_response(prompt)
+        logging.error(bot_response)
+        opt_prompt = bot_handler.get_response(f'Please analyze the given prompt and optimize it by removing any grammatical errors, spelling mistakes, biases (such as gender, racial, or cultural biases), sensitive or personal information, inappropriate content (such as self-harm, violence, or explicit material), and any unclear or incomplete phrasing. Ensure the optimized prompt is structured for clarity, neutrality, and inclusivity, making it more effective in generating meaningful and constructive responses only prompt no explanation."{prompt}"')
+        logging.error(opt_prompt)
+        opt_bot_response = bot_handler.get_response(opt_prompt["response"])
+        return JSONResponse(
+            status_code=200,
+            content={
+                "status": "success",
+                "data": {
+                    "bot_response": bot_response,
+                    "opt_bot_response": opt_bot_response,
+                    "opt_prompt": opt_prompt,
+                },
+            },
+        )
+    except Exception as e:
+        logging.error(e)
         return JSONResponse(
             status_code=500,
             content={"status": "failed", "message": "An internal error occured"},

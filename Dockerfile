@@ -9,6 +9,12 @@ ENV POETRY_NO_INTERACTION=1 \
 
 WORKDIR /pact-backend
 
+RUN mkdir uploads
+
+RUN sudo apt-get update
+
+RUN sudo apt-get install build-essential ca-certificates libasound2-dev libssl-dev wget
+
 COPY pyproject.toml poetry.lock ./
 
 RUN touch README.md

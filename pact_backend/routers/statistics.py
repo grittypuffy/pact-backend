@@ -1,3 +1,4 @@
+import logging
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
@@ -34,7 +35,7 @@ async def update_statistics(body: RequestModel):
         await collection.replace_one({"metrics_type":"opt_prompt_metrics"},opt_prompt_metrics,upsert=True)
         return JSONResponse(status_code=200,content={"status": "success","message": "Statistics updated successfully"})
     except Exception as err:
-        print(err)
+        logging.error(err)
         return JSONResponse(status_code=500,content={"status": "failed","message": "Internal server error"})
 
 @router.get("/get")
@@ -55,5 +56,5 @@ async def get_statistics():
             del opt_prompt_metrics["_id"]
         return JSONResponse(status_code=200,content={"status": "success","data":{"prompt_metrics": prompt_metrics,"opt_prompt_metrics": opt_prompt_metrics}})
     except Exception as err:
-        print(err)
+        logging.error(err)
         return JSONResponse(status_code=500,content={"status": "failed","message": "Internal server error"})

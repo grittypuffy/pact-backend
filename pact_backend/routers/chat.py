@@ -1,3 +1,4 @@
+import logging
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
@@ -46,38 +47,8 @@ async def add_chat(body:RequestModel, req: Request):
         await ChatCollection.update_one({"_id":chat_id}, {"$set": data.dict()})
         return JSONResponse(status_code=200,content={"status": "success","message": "Chat updated successfully"})
     except Exception as err:
-        print(err)
+        logging.error(err)
         return JSONResponse(status_code=500,content={"status": "failed","message": f"Internal server error{err}"})
-
-# @router.put("/update")
-# async def updateChat(body:UpdateRequest):
-#     try:
-#         collection = db['chat']
-#         chat_id = ObjectId(body.chat_id)
-#         prevChat = await collection.find_one({"_id":chat_id})
-#         if not prevChat:
-#             return JSONResponse(status_code=404,content={"status": "failed","message": "Chat not found"})
-#         history_id = prevChat.get("history_id")
-#         data = ChatModel(**{k:v for k,v in body.dict().items() if k != "chat_id"}, history_id=history_id)
-#         await collection.update_one({"_id":chat_id}, {"$set": data.dict()})
-#         return JSONResponse(status_code=200,content={"status": "success","message": "Chat updated successfully"})
-#     except Exception as err:
-#         print(err)
-#         return JSONResponse(status_code=500,content={"status": "failed","message": "Internal server error"})
-
-# @router.get("/get")
-# async def getChat(history_id:str):
-#     try:
-#         collection = db['chat']
-#         chats_cursor = collection.find({"history_id":history_id},{"created_at": 0}).sort("created_at",1)
-#         chats = await chats_cursor.to_list()
-#         chats = [serializer(chat) for chat in chats]
-#         if not chats:
-#             return JSONResponse(status_code=404,content={"status": "failed","message": "Chat not found"})
-#         return JSONResponse(status_code=200,content={"status": "success","data": chats})
-#     except Exception as err:
-#         print(err)
-#         return JSONResponse(status_code=500,content={"status": "failed","message": "Internal server error"})
 
 @router.get("/get")
 async def get_chat(req:Request):
@@ -96,5 +67,5 @@ async def get_chat(req:Request):
                 chats.append({"history":serializer(h),"chats":chat})
         return JSONResponse(status_code=200,content={"status": "success","data": chats})
     except Exception as err:
-        print(err)
+        logging.error(err)
         return JSONResponse(status_code=500,content={"status": "failed","message": "Internal server error"})

@@ -33,6 +33,17 @@ class EnvVarConfig(BaseSettings):
     azure_openai_api_version: str
     azure_openai_model_name: str    
 
+    # Azure speech to text
+    azure_stt_key: str
+    azure_stt_region: str
+    
+    # Temporary file uploads
+    tmp_upload_dir: str
+
+    # Azure blob storage
+    uploads_container: str = "uploads"
+    st_connection_string: str
+
     class EnvVarConfig:
         env_file = ".env"
         env_file_encoding = "utf-8"
