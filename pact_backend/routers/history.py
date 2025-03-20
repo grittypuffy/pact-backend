@@ -1,3 +1,4 @@
+import logging
 from ..config import AppConfig, get_config
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
@@ -11,7 +12,7 @@ config: AppConfig = get_config()
 db = config.db
 
 @router.post("/add")
-async def addHistory(user_msg: str,req: Request):
+async def add_history(user_msg: str,req: Request):
     try:
         user_id = req.state.user.get("user_id")
         prompt = f"For the following message '{user_msg}' give me a proper title for the chat.The lengthn of the title should not be more than 3 words"
@@ -23,11 +24,11 @@ async def addHistory(user_msg: str,req: Request):
         id = str(data.inserted_id)
         return JSONResponse(status_code=200,content={"status": "success","message": "History added successfully", "data": id})
     except Exception as err:
-        print(err)
+        logging.error(err)
         return JSONResponse(status_code=500,content={"status": "failed","message": "Internal server error"})
 
 @router.get("/get")
-async def getHistory(req:Request):
+async def get_history(req:Request):
     try:
         user_id = req.state.user.get("user_id")
         collection = db['history']
@@ -36,5 +37,5 @@ async def getHistory(req:Request):
         history = [serializer(hist) for hist in history]
         return JSONResponse(status_code=200,content={"status": "success","data": history})
     except Exception as err:
-        print(err)
+        logging.error(err)
         return JSONResponse(status_code=500,content={"status": "failed","message": "Internal server error"})

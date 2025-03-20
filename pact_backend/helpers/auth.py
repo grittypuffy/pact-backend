@@ -1,3 +1,4 @@
+import logging
 from ..config import AppConfig
 import time
 from typing import Dict
@@ -31,7 +32,7 @@ def sign_jwt(user_id: str, username: str):
             payload.dict(), config.env.jwt_secret, algorithm="HS512")
         return (token, payload.expires)
     except Exception as e:
-        print(e)
+        logging.error(e)
 
 
 def decode_jwt(token: str) -> dict:
