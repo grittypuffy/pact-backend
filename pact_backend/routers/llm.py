@@ -1,6 +1,6 @@
 import asyncio
 import os
-import re
+import math
 import time
 import datetime
 from pydantic import BaseModel
@@ -18,6 +18,7 @@ from ..services.response import BotHandler
 router = APIRouter()
 
 config: AppConfig = get_config()
+
 
 class Metric_Request(BaseModel):
     query: str
@@ -64,11 +65,11 @@ async def get_metrics(payload: Metric_Request):
         evaluation = {}
         opt_evaluation = {}
 
-        evaluation["grammar"] = int(response["grammar"] ) + 5
-        opt_evaluation["grammar"] = int(opt_response["grammar"]) + 5
+        evaluation["grammar"] = int(response["grammar"])
+        opt_evaluation["grammar"] = int(opt_response["grammar"])
 
-        evaluation["spell_check"] = int(response["spell_check"]) + 5
-        opt_evaluation["spell_check"] = int(opt_response["spell_check"]) + 5
+        evaluation["spell_check"] = int(response["spell_check"])
+        opt_evaluation["spell_check"] = int(opt_response["spell_check"])
 
         maxi = -1
         if (
@@ -80,7 +81,7 @@ async def get_metrics(payload: Metric_Request):
             for ele in entities:
                 maxi = max(maxi, ele.get("confidence_score", -1))
 
-            maxi = int(maxi * 10)
+            maxi = int(math.ceil((maxi * 5)))
         else:
             maxi = -1
         evaluation["sensitive_info"] = maxi
@@ -95,23 +96,34 @@ async def get_metrics(payload: Metric_Request):
             for ele in entities:
                 maxi = max(maxi, ele.get("confidence_score", -1))
 
-            maxi = int(maxi * 10)
+            maxi = int(math.floor(maxi * 5))
         else:
             maxi = -1
         opt_evaluation["sensitive_info"] = maxi
 
-        evaluation["violence"] = int(response["violence"]["violence_score"] * 10 / 7)
-        opt_evaluation["violence"] = int(opt_response["violence"]["violence_score"] * 10 / 7)
+        evaluation["violence"] = int(response["violence"]["violence_score"] * 5 / 7)
+        opt_evaluation["violence"] = int(
+            opt_response["violence"]["violence_score"] * 5 / 7
+        )
 
-        evaluation["bias_gender"] = int(response["bias_gender"]["sexual_score"] * 10 / 7)
-        opt_evaluation["bias_gender"] = int(opt_response["bias_gender"]["sexual_score"] * 10 / 7)
+        evaluation["bias_gender"] = int(response["bias_gender"]["sexual_score"] * 5 / 7)
+        opt_evaluation["bias_gender"] = int(
+            opt_response["bias_gender"]["sexual_score"] * 5 / 7
+        )
 
-        evaluation["self_harm"] = int(response["bias_self_harm"]["self_harm_score"] * 10 / 7)
-        opt_evaluation["self_harm"] = int (opt_response["bias_self_harm"]["self_harm_score"] * 10 / 7)
+        evaluation["self_harm"] = int(
+            response["bias_self_harm"]["self_harm_score"] * 5 / 7
+        )
+        opt_evaluation["self_harm"] = int(
+            opt_response["bias_self_harm"]["self_harm_score"] * 5 / 7
+        )
 
-        evaluation["hate_unfairness"] = int(response["hate_unfairness"]["hate_unfairness_score"] * 10 / 7)
-        opt_evaluation["hate_unfairness"] = int(opt_response["hate_unfairness"]["hate_unfairness_score"] * 10 / 7)
-        
+        evaluation["hate_unfairness"] = int(
+            response["hate_unfairness"]["hate_unfairness_score"] * 5 / 7
+        )
+        opt_evaluation["hate_unfairness"] = int(
+            opt_response["hate_unfairness"]["hate_unfairness_score"] * 5 / 7
+        )
 
         flag = "not computed"
         for key in response["jailbreak"]:
