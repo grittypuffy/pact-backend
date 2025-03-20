@@ -35,12 +35,12 @@ class Metrics:
         self.preprocessor = PreProcessor()
 
     def evaluate_grammar(self, query: str):
-        prompt = f"Evaluate the grammatical correctness of the following sentence and return only the score from 1 to 5:\n\n{query}"
+        prompt = f"Evaluate the grammatical correctness of the following sentence and return only the score from 0 to 5:\n\n{query}"
         result = self.bot.get_response(prompt)
         return result.get("response", "Error in evaluation")
     
     def evaluate_spell_check(self, query: str):       
-        prompt = f"Evaluate the spelling accuracy of the following sentence and return only the score from 1 to 5:\n\n{query}"
+        prompt = f"Evaluate the spelling accuracy of the following sentence and return only the score from 0 to 5:\n\n{query}"
         result = self.bot.get_response(prompt)
         return result.get("response", "Error in evaluation")
     
