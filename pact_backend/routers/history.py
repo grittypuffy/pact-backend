@@ -22,7 +22,7 @@ async def add_history(user_msg: str,req: Request):
         collection = db['history']
         data = await collection.insert_one(data.dict())
         id = str(data.inserted_id)
-        return JSONResponse(status_code=200,content={"status": "success","message": "History added successfully", "data": id})
+        return JSONResponse(status_code=200,content={"status": "success","message": "History added successfully", "data": id, "title": title})
     except Exception as err:
         logging.error(err)
         return JSONResponse(status_code=500,content={"status": "failed","message": "Internal server error"})
