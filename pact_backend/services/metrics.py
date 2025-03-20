@@ -33,17 +33,26 @@ class Metrics:
         self.client = TextAnalyticsClient(endpoint=self.endpoint, credential=self.credential)
         self.bot = BotHandler()
         self.preprocessor = PreProcessor()
+        self.azure_openai_metric_mapping = {
+            "safe": 0,
+            "low": 1,
+            "medium": 3,
+            "high": 5
+        }
+
 
     def evaluate_grammar(self, query: str):
         prompt = f"Evaluate the grammatical correctness of the following sentence and return only the score from 0 to 5:\n\n{query}"
         result = self.bot.get_response(prompt)
         return result.get("response", "Error in evaluation")
     
+
     def evaluate_spell_check(self, query: str):       
         prompt = f"Evaluate the spelling accuracy of the following sentence and return only the score from 0 to 5:\n\n{query}"
         result = self.bot.get_response(prompt)
         return result.get("response", "Error in evaluation")
     
+
     def evaluate_sensitive_info(self, query: str):
         query=[query]
         credential = AzureKeyCredential(self.language_api_key)
@@ -55,6 +64,7 @@ class Metrics:
             logging.error(f"Error during evaluation: {e}")
             return 0
     
+
     def evaluate_violence(self, query: str, response: str):
         violence_evaluator = ViolenceEvaluator(credential=self.credential, azure_ai_project=self.azure_ai_project)
         try:
@@ -64,6 +74,7 @@ class Metrics:
             logging.error(f"Error during evaluation: {e}")
             return None
     
+
     def evaluate_bias_gender(self, query: str, response: str): 
         sexual_eval = SexualEvaluator(azure_ai_project=self.azure_ai_project, credential=self.credential)
         try:
@@ -73,7 +84,6 @@ class Metrics:
             logging.error(f"Error during evaluation: {e}")
             return None
         
-
     
     def evaluate_self_harm(self, query: str, response: str):
         selfharm_eval = SelfHarmEvaluator(azure_ai_project=self.azure_ai_project, credential=self.credential)
@@ -84,6 +94,7 @@ class Metrics:
             logging.error(f"Error during evaluation: {e}")
             return None
     
+
     def evaluate_hate_unfairness(self, query: str, response: str):       
         hate_unfairness_eval = HateUnfairnessEvaluator(azure_ai_project=self.azure_ai_project, credential=self.credential)
         try:
@@ -93,6 +104,7 @@ class Metrics:
             logging.error(f"Error during evaluation: {e}")
             return None
     
+
     def evaluate_jailbreak(self, query: str, response: str):
         jailbreak_eval = IndirectAttackEvaluator(azure_ai_project=self.azure_ai_project, credential=self.credential)
         try:
@@ -118,3 +130,35 @@ class Metrics:
 
             results = {key: future.result() for key, future in future_to_function.items()}        
         return results
+
+    def get_openai_metrics(self, metrics_response: object, query: str):
+        hate = content_filter_result["hate"]
+        jailbreak = content_filter_result["jailbreak"]
+        self_harm = content_filter_result["self_harm"]
+        sexual = content_filter_result["sexual"]
+        violence = content_filter_result["violence"]
+
+        hate, hate_severity = hate["filtered"], hate["severity"]
+        jailbreak, jailbreak_attempt = jailbreak["filtered"], jailbreak["detected"]
+        self_harm, self_harm_severity = self_harm["filtered"], self_harm["severity"]
+        sexual, sexual_severity = sexual["filtered"], sexual["severity"]
+        violence, violence_severity = violence["filtered"], violence["severity"]
+
+        hate_severity = self.get_openai_metrics.get(hate_severity.lower())
+        self_harm_severity = self.get_openai_metrics.get(self_harm_severity.lower())
+        sexual_severity = self.get_openai_metrics.get(sexual_severity.lower())
+        violence_severity = self.get_openai_metrics.get(violence_severity.lower())
+        grammar = self.evaluate_grammar(query)
+        spell_check = self.evaluate_spell_check(query)
+        sensitive_info = self.evaluate_sensitive_info(query)
+        return {
+            "flagged": True,
+            "grammar": grammar,
+            "spell_check": spell_check,
+            "sensitive_info": sensitive_info,
+            "violence": violence_severity,
+            "bias_gender": sexual_severity,
+            "bias_self_harm": self_harm_severity,
+            "hate_unfairness": hate_severity,
+            "jailbreak": jailbreak_attempt
+        }

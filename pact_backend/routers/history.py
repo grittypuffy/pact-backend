@@ -15,7 +15,7 @@ db = config.db
 async def add_history(user_msg: str,req: Request):
     try:
         user_id = req.state.user.get("user_id")
-        prompt = f"For the following message '{user_msg}' give me a proper title for the chat.The lengthn of the title should not be more than 3 words"
+        prompt = f"For the following message '{user_msg}' give me a proper title for the chat. The length of the title should not be more than 3 words"
         bot = BotHandler()
         title = bot.get_response(prompt).get("response").replace("\n","").replace("\"","")
         data = HistoryModel(title=title, user_id=user_id)

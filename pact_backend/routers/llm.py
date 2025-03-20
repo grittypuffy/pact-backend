@@ -33,12 +33,16 @@ class Metric_Request(BaseModel):
     opt_answer: str
 
 
-@router.get("/{user_prompt}")
-async def get_bot_response(user_prompt: str):
+@router.get("/prompt")
+async def get_bot_response(prompt: str):
     try:
-        bot_response = bot_handler.get_response(user_prompt)
+        bot_response = bot_handler.get_response(prompt)
+
+        if bot_response.get("content_filter"):
+            logging.error(bot_response)
+
         opt_prompt = bot_handler.get_response(
-            f'Please analyze the given prompt and optimize it by removing any grammatical errors, spelling mistakes, biases (such as gender, racial, or cultural biases), sensitive or personal information, inappropriate content (such as self-harm, violence, or explicit material), and any unclear or incomplete phrasing. Ensure the optimized prompt is structured for clarity, neutrality, and inclusivity, making it more effective in generating meaningful and constructive responses only prompt no explanation."{user_prompt}"'
+            f'Please analyze the given prompt and optimize it by removing any grammatical errors, spelling mistakes, biases (such as gender, racial, or cultural biases), sensitive or personal information, inappropriate content (such as self-harm, violence, or explicit material), and any unclear or incomplete phrasing. Ensure the optimized prompt is structured for clarity, neutrality, and inclusivity, making it more effective in generating meaningful and constructive responses only prompt no explanation."{prompt}"'
         )
         opt_bot_response = bot_handler.get_response(opt_prompt["response"])
         return JSONResponse(
@@ -211,23 +215,30 @@ async def get_voice_response(audio: Annotated[UploadFile, File()], language_code
                     "data": None,
                     "message": "There was an error while processing the prompt"
                 },
-            )         
+            )
         bot_response = bot_handler.get_response(prompt)
-        logging.error(bot_response)
-        opt_prompt = bot_handler.get_response(f'Please analyze the given prompt and optimize it by removing any grammatical errors, spelling mistakes, biases (such as gender, racial, or cultural biases), sensitive or personal information, inappropriate content (such as self-harm, violence, or explicit material), and any unclear or incomplete phrasing. Ensure the optimized prompt is structured for clarity, neutrality, and inclusivity, making it more effective in generating meaningful and constructive responses only prompt no explanation."{prompt}"')
-        logging.error(opt_prompt)
+
+        if bot_response.get("content_filter"):
+            logging.error(bot_response)
+
+        opt_prompt = bot_handler.get_response(f'Please analyze the given prompt and optimize it by removing any grammatical errors, spelling mistakes, biases (such as gender, racial, or cultural biases), sensitive or personal information, inappropriate content (such as self-harm, violence, or explicit material), and any unclear or incomplete phrasing. Ensure the optimized prompt is structured for clarity, neutrality, and inclusivity, incorporating responsible AI principles making it more effective in generating meaningful and constructive responses only prompt no explanation.\n"{prompt}"')
+
         opt_bot_response = bot_handler.get_response(opt_prompt["response"])
+
         return JSONResponse(
             status_code=200,
             content={
                 "status": "success",
                 "data": {
-                    "bot_response": bot_response,
+                    "bot_response": {
+                        "response": bot_response.get("response")
+                    },
                     "opt_bot_response": opt_bot_response,
                     "opt_prompt": opt_prompt,
                 },
             },
         )
+
     except Exception as e:
         logging.error(e)
         return JSONResponse(
