@@ -1,3 +1,4 @@
+import logging
 from ..config import AppConfig, get_config
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
@@ -23,7 +24,7 @@ async def add_history(user_msg: str,req: Request):
         id = str(data.inserted_id)
         return JSONResponse(status_code=200,content={"status": "success","message": "History added successfully", "data": id})
     except Exception as err:
-        print(err)
+        logging.error(err)
         return JSONResponse(status_code=500,content={"status": "failed","message": "Internal server error"})
 
 @router.get("/get")
@@ -36,5 +37,5 @@ async def get_history(req:Request):
         history = [serializer(hist) for hist in history]
         return JSONResponse(status_code=200,content={"status": "success","data": history})
     except Exception as err:
-        print(err)
+        logging.error(err)
         return JSONResponse(status_code=500,content={"status": "failed","message": "Internal server error"})
