@@ -71,5 +71,5 @@ class BotHandler:
             raise RuntimeError(f"Error during API call: {e}")
 
         return {
-            "response": response
+            "response": response.replace("\n","").replace("\"","")
         }
