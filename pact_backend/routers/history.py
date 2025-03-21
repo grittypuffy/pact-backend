@@ -6,14 +6,19 @@ from ..models.history import HistoryModel
 from bson import ObjectId
 from ..services.response import BotHandler
 from ..helpers.serializer import serializer
+from pydantic import BaseModel
 
 router = APIRouter()
 config: AppConfig = get_config()
 db = config.db
 
+class AddRequest(BaseModel):
+    user_msg: str
+
 @router.post("/add")
-async def add_history(user_msg: str,req: Request):
+async def add_history(data: AddRequest,req: Request):
     try:
+        user_msg = data.user_msg
         user_id = req.state.user.get("user_id")
         prompt = f"For the following message '{user_msg}' give me a proper title for the chat. The length of the title should not be more than 3 words"
         bot = BotHandler()
