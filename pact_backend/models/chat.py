@@ -55,6 +55,7 @@ class RequestModel(BaseModel):
     opt_response: str
     prompt_metrics: MetricsModel
     opt_prompt_metrics: MetricsModel
+    flagged: bool
 
 # class RequestModel(BaseModel):
 #     history_id: str
