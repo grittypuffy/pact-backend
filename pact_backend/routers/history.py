@@ -23,6 +23,7 @@ async def add_history(data: AddRequest, req: Request):
     try:
         user_msg = data.user_msg
         user_id = config.env.anonymous_user_id
+        # print(req.state.user)
         if req.state.user:
             user_id = req.state.user.get("user_id")
 
@@ -45,6 +46,7 @@ async def add_history(data: AddRequest, req: Request):
 @router.get("/get")
 async def get_history(req: Request):
     try:
+        # print(req.state.user)
         user_id = req.state.user.get("user_id")
         collection = db['history']
         history_cursor = collection.find({"user_id":user_id},{"created_at":0})
