@@ -10,7 +10,7 @@ from fastapi import APIRouter, Response, Request, Cookie, File, Form, UploadFile
 from fastapi.responses import JSONResponse
 
 from ..config import AppConfig, get_config
-from ..helpers.auth import get_hashed_password, verify_password, sign_jwt, decode_jwt
+from ..helpers.auth import get_hashed_password, verify_password, sign_jwt, decode_jwt, verify_jwt
 from ..helpers.filename import get_filename_hash
 from ..models.auth import SignInRequest, SignUpRequest, Token
 from ..services.metrics import Metrics
