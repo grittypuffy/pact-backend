@@ -11,9 +11,9 @@ WORKDIR /pact-backend
 
 RUN mkdir uploads
 
-RUN sudo apt-get update
+RUN apt-get update
 
-RUN sudo apt-get install build-essential ca-certificates libasound2-dev libssl-dev wget
+RUN apt-get install -y build-essential ca-certificates libasound2-dev libssl-dev wget
 
 COPY pyproject.toml poetry.lock ./
 
