@@ -132,11 +132,11 @@ class Metrics:
         return results
 
     def get_openai_metrics(self, metrics_response: object, query: str):
-        hate = content_filter_result["hate"]
-        jailbreak = content_filter_result["jailbreak"]
-        self_harm = content_filter_result["self_harm"]
-        sexual = content_filter_result["sexual"]
-        violence = content_filter_result["violence"]
+        hate = metrics_response["hate"]
+        jailbreak = metrics_response["jailbreak"]
+        self_harm = metrics_response["self_harm"]
+        sexual = metrics_response["sexual"]
+        violence = metrics_response["violence"]
 
         hate, hate_severity = hate["filtered"], hate["severity"]
         jailbreak, jailbreak_attempt = jailbreak["filtered"], jailbreak["detected"]
@@ -144,10 +144,10 @@ class Metrics:
         sexual, sexual_severity = sexual["filtered"], sexual["severity"]
         violence, violence_severity = violence["filtered"], violence["severity"]
 
-        hate_severity = self.get_openai_metrics.get(hate_severity.lower())
-        self_harm_severity = self.get_openai_metrics.get(self_harm_severity.lower())
-        sexual_severity = self.get_openai_metrics.get(sexual_severity.lower())
-        violence_severity = self.get_openai_metrics.get(violence_severity.lower())
+        hate_severity = self.azure_openai_metric_mapping.get(hate_severity.lower())
+        self_harm_severity = self.azure_openai_metric_mapping.get(self_harm_severity.lower())
+        sexual_severity = self.azure_openai_metric_mapping.get(sexual_severity.lower())
+        violence_severity = self.azure_openai_metric_mapping.get(violence_severity.lower())
         grammar = self.evaluate_grammar(query)
         spell_check = self.evaluate_spell_check(query)
         sensitive_info = self.evaluate_sensitive_info(query)

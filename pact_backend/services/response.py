@@ -1,3 +1,4 @@
+import logging
 import openai
 from langchain_community.callbacks import get_openai_callback
 from langchain_openai import AzureChatOpenAI
