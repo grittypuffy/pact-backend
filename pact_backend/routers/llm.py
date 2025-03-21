@@ -32,6 +32,7 @@ class Metric_Request(BaseModel):
     opt_query: str
     opt_answer: str
     flagged: bool
+    metrics: dict | None
 
 
 class BotRequest(BaseModel):
@@ -48,19 +49,6 @@ async def get_bot_response(prompt: BotRequest):
             f'Please analyze the given prompt and optimize it by removing any grammatical errors, spelling mistakes, biases (such as gender, racial, or cultural biases), sensitive or personal information, inappropriate content (such as self-harm, violence, or explicit material), and any unclear or incomplete phrasing. Ensure the optimized prompt is structured for clarity, neutrality, and inclusivity, making it more effective in generating meaningful and constructive responses only prompt no explanation."{prompt}"'
         )
         opt_bot_response = bot_handler.get_response(opt_prompt["response"])
-        return JSONResponse(
-            status_code=200,
-            content={
-                "flagged": False,
-                "status": "success",
-                "data": {
-                    "bot_response": bot_response,
-                    "opt_bot_response": opt_bot_response,
-                    "opt_prompt": opt_prompt,
-                    "flagged": False,
-                },
-            },
-        )
         if bot_response.get("content_filter"):
             return JSONResponse(
                 status_code=200,
@@ -68,12 +56,26 @@ async def get_bot_response(prompt: BotRequest):
                     "status": "success",
                     "data": {
                         "flagged": True,
-                        "metrics": metrics.get_openai_metrics(bot_response, prompt),
                         "bot_response": {"response": "The provided prompt was filtered due to the prompt triggering the content management policy. Please modify your prompts"},
                         "opt_bot_response": opt_bot_response,
                         "opt_prompt": opt_prompt,
+                        "metrics": metrics.get_openai_metrics(bot_response, prompt)
                     },
                 },
+        )
+
+        return JSONResponse(
+            status_code=200,
+            content={
+                "status": "success",
+                "data": {
+                    "bot_response": bot_response,
+                    "opt_bot_response": opt_bot_response,
+                    "opt_prompt": opt_prompt,
+                    "flagged": False,
+                    "metrics": None
+                },
+            },
         )
 
     except Exception as e:
@@ -88,8 +90,16 @@ async def get_bot_response(prompt: BotRequest):
 async def get_metrics(payload: Metric_Request):
     try:
         metrics = Metrics()
-        response = metrics.evaluate_all(payload.query, payload.answer)
-        opt_response = metrics.evaluate_all(payload.opt_query, payload.opt_answer)
+        response = None
+        opt_response = None
+
+        if payload.flagged:
+            response = metrics.get_openai_metrics(payload.metrics, prompt)
+            opt_response = metrics.evaluate_all(payload.opt_query, payload.opt_answer)
+
+        else:
+            response = metrics.evaluate_all(payload.query, payload.answer)
+            opt_response = metrics.evaluate_all(payload.opt_query, payload.opt_answer)
 
         evaluation = {}
         opt_evaluation = {}
@@ -249,20 +259,32 @@ async def get_voice_response(
             )
         bot_response = bot_handler.get_response(prompt)
 
-        if bot_response.get("content_filter"):
-            logging.error(bot_response)
-
         opt_prompt = bot_handler.get_response(
             f'Please analyze the given prompt and optimize it by removing any grammatical errors, spelling mistakes, biases (such as gender, racial, or cultural biases), sensitive or personal information, inappropriate content (such as self-harm, violence, or explicit material), and any unclear or incomplete phrasing. Ensure the optimized prompt is structured for clarity, neutrality, and inclusivity, incorporating responsible AI principles making it more effective in generating meaningful and constructive responses only prompt no explanation.\n"{prompt}"'
         )
 
         opt_bot_response = bot_handler.get_response(opt_prompt["response"])
 
+        if bot_response.get("content_filter"):
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "data": {
+                        "flagged": True,
+                        "bot_response": {"response": "The provided prompt was filtered due to the prompt triggering the content management policy. Please modify your prompts"},
+                        "opt_bot_response": opt_bot_response,
+                        "opt_prompt": opt_prompt,
+                    },
+                },
+        )
+
         return JSONResponse(
             status_code=200,
             content={
                 "status": "success",
                 "data": {
+                    "flagged": False,
                     "bot_response": {"response": bot_response.get("response")},
                     "opt_bot_response": opt_bot_response,
                     "opt_prompt": opt_prompt,
