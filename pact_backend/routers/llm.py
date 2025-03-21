@@ -110,7 +110,7 @@ async def get_metrics(payload: Metric_Request):
         evaluation["spell_check"] = int(response["spell_check"])
         opt_evaluation["spell_check"] = int(opt_response["spell_check"])
 
-        maxi = -1
+        maxi = 0
         if (
             "sensitive_info" in response
             and isinstance(response["sensitive_info"], list)
@@ -118,14 +118,13 @@ async def get_metrics(payload: Metric_Request):
         ):
             entities = response["sensitive_info"][0].entities
             for ele in entities:
-                maxi = max(maxi, ele.get("confidence_score", -1))
-
+                maxi = max(maxi, ele.get("confidence_score", 0))
             maxi = int(math.ceil((maxi * 5)))
         else:
-            maxi = -1
+            maxi = 0
         evaluation["sensitive_info"] = maxi
 
-        maxi = -1
+        maxi = 0
         if (
             "sensitive_info" in opt_response
             and isinstance(opt_response["sensitive_info"], list)
@@ -133,11 +132,11 @@ async def get_metrics(payload: Metric_Request):
         ):
             entities = opt_response["sensitive_info"][0].entities
             for ele in entities:
-                maxi = max(maxi, ele.get("confidence_score", -1))
+                maxi = max(maxi, ele.get("confidence_score", 0))
 
             maxi = int(math.floor(maxi * 5))
         else:
-            maxi = -1
+            maxi = 0
         opt_evaluation["sensitive_info"] = maxi
 
         evaluation["violence"] = int(response["violence"]["violence_score"] * 5 / 7)

@@ -24,7 +24,9 @@ class StatisticsModel(BaseModel):
     self_harm: Dict[str,int] = Field(default_factory=default_metrics)
     hate_unfairness: Dict[str,int] = Field(default_factory=default_metrics)
     jailbreak: Dict[str,int] = Field(default_factory=lambda: {'True':0,'False':0})
+    flagged: Dict[str,bool] = Field(default_factory=lambda: {'True':False,'False':False})
 
 class RequestModel(BaseModel):
     metrics: MetricsModel
     opt_metrics: MetricsModel
+    flagged: bool
