@@ -13,7 +13,7 @@ RUN mkdir uploads
 
 RUN apt-get update
 
-RUN apt-get install build-essential ca-certificates libasound2-dev libssl-dev wget
+RUN apt-get install -y build-essential ca-certificates libasound2-dev libssl-dev wget
 
 COPY pyproject.toml poetry.lock ./
 
