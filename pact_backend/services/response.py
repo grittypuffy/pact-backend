@@ -1,3 +1,4 @@
+import logging
 import openai
 from langchain_community.callbacks import get_openai_callback
 from langchain_openai import AzureChatOpenAI
@@ -19,12 +20,12 @@ class BotHandler:
     def __init__(self, temperature: float = 0, max_tokens: int = 300):
         """
         Initializes the BotHandler with model configurations.
-        
+
         Args:
             temperature (float): Controls randomness (default = 0).
             max_tokens (int): Maximum tokens for the response (default = 200).
         """
-        
+
         self.model = config.env.azure_openai_model_name
         self.temperature = temperature
         self.max_tokens = max_tokens
@@ -68,9 +69,12 @@ class BotHandler:
                 response = output.content
         except openai.BadRequestError as openai_bad_request_error:
             error_body = openai_bad_request_error.body
-            if (error_body.get("code") == "content_filter"):
+            if error_body.get("code") == "content_filter":
                 inner_error = error_body.get("innererror")
-                if (content_filter_result := inner_error.get("content_filter_result") and inner_error.get("code") == "ResponsibleAIPolicyViolation"):
+                if (
+                    inner_error.get("code") == "ResponsibleAIPolicyViolation"
+                ):
+                    content_filter_result = inner_error.get("content_filter_result")
                     return {
                         "response": "The provided prompt was filtered due to the prompt triggering the content management policy. Please modify your prompts.",
                         "content_filter": True,
@@ -79,23 +83,21 @@ class BotHandler:
                         "self_harm": content_filter_result.get("self_harm"),
                         "sexual": content_filter_result.get("sexual"),
                         "violence": content_filter_result.get("violence"),
-                        "error": True
+                        "error": True,
                     }
             else:
                 return {
                     "error": True,
                     "response": "There was an error processing the prompt, please check your prompt and retry.",
-                    "content_filter": False
-                }       
+                    "content_filter": False,
+                }
 
         except Exception as e:
             logging.error(e)
             return {
                 "error": True,
                 "response": "There was an error processing the prompt, please check your prompt and retry.",
-                "content_filter": False
+                "content_filter": False,
             }
 
-        return {
-            "response": response.replace("\n","").replace("\"","")
-        }
+        return {"response": response.replace("\n", "").replace('"', "")}

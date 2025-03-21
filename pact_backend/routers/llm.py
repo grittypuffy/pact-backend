@@ -31,16 +31,19 @@ class Metric_Request(BaseModel):
     answer: str
     opt_query: str
     opt_answer: str
+    flagged: bool
 
 
-@router.get("/prompt")
-async def get_bot_response(prompt: str):
+class BotRequest(BaseModel):
+    prompt: str
+
+
+@router.post("/prompt")
+async def get_bot_response(prompt: BotRequest):
     try:
+        prompt = prompt.prompt
+        metrics = Metrics()
         bot_response = bot_handler.get_response(prompt)
-
-        if bot_response.get("content_filter"):
-            logging.error(bot_response)
-
         opt_prompt = bot_handler.get_response(
             f'Please analyze the given prompt and optimize it by removing any grammatical errors, spelling mistakes, biases (such as gender, racial, or cultural biases), sensitive or personal information, inappropriate content (such as self-harm, violence, or explicit material), and any unclear or incomplete phrasing. Ensure the optimized prompt is structured for clarity, neutrality, and inclusivity, making it more effective in generating meaningful and constructive responses only prompt no explanation."{prompt}"'
         )
@@ -48,14 +51,31 @@ async def get_bot_response(prompt: str):
         return JSONResponse(
             status_code=200,
             content={
+                "flagged": False,
                 "status": "success",
                 "data": {
                     "bot_response": bot_response,
                     "opt_bot_response": opt_bot_response,
                     "opt_prompt": opt_prompt,
+                    "flagged": False,
                 },
             },
         )
+        if bot_response.get("content_filter"):
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "data": {
+                        "flagged": True,
+                        "metrics": metrics.get_openai_metrics(bot_response, prompt),
+                        "bot_response": {"response": "The provided prompt was filtered due to the prompt triggering the content management policy. Please modify your prompts"},
+                        "opt_bot_response": opt_bot_response,
+                        "opt_prompt": opt_prompt,
+                    },
+                },
+        )
+
     except Exception as e:
         logging.error(e)
         return JSONResponse(
@@ -168,9 +188,16 @@ async def get_metrics(payload: Metric_Request):
 
 
 @router.post("/voice")
-async def get_voice_response(audio: Annotated[UploadFile, File()], language_code: str = Form("en-US"), token: str = Cookie(None)):
+async def get_voice_response(
+    audio: Annotated[UploadFile, File()],
+    language_code: str = Form("en-US"),
+    token: str = Cookie(None),
+):
     if token and not verify_jwt(token):
-        return JSONResponse(status_code=409, content={"status": "failed", "message": "Invalid credentials"})
+        return JSONResponse(
+            status_code=409,
+            content={"status": "failed", "message": "Invalid credentials"},
+        )
     token = None
     username = None
     user_id = None
@@ -187,14 +214,18 @@ async def get_voice_response(audio: Annotated[UploadFile, File()], language_code
             content={
                 "status": "failed",
                 "data": None,
-                "message": "Failed to process voice content"
-            }
+                "message": "Failed to process voice content",
+            },
         )
     prompt = None
     match content_type:
         case "audio/wav":
-            transcription = await upload_client.get_audio_transcription(file_path, language_code)
-            if (transcripted_text := transcription.get("data")) and not transcription.get("error"):
+            transcription = await upload_client.get_audio_transcription(
+                file_path, language_code
+            )
+            if (
+                transcripted_text := transcription.get("data")
+            ) and not transcription.get("error"):
                 prompt = transcripted_text
 
         case _:
@@ -203,7 +234,7 @@ async def get_voice_response(audio: Annotated[UploadFile, File()], language_code
                 content={
                     "status": "failed",
                     "data": None,
-                    "message": "Unsupported format"
+                    "message": "Unsupported format",
                 },
             )
     try:
@@ -213,7 +244,7 @@ async def get_voice_response(audio: Annotated[UploadFile, File()], language_code
                 content={
                     "status": "failed",
                     "data": None,
-                    "message": "There was an error while processing the prompt"
+                    "message": "There was an error while processing the prompt",
                 },
             )
         bot_response = bot_handler.get_response(prompt)
@@ -221,7 +252,9 @@ async def get_voice_response(audio: Annotated[UploadFile, File()], language_code
         if bot_response.get("content_filter"):
             logging.error(bot_response)
 
-        opt_prompt = bot_handler.get_response(f'Please analyze the given prompt and optimize it by removing any grammatical errors, spelling mistakes, biases (such as gender, racial, or cultural biases), sensitive or personal information, inappropriate content (such as self-harm, violence, or explicit material), and any unclear or incomplete phrasing. Ensure the optimized prompt is structured for clarity, neutrality, and inclusivity, incorporating responsible AI principles making it more effective in generating meaningful and constructive responses only prompt no explanation.\n"{prompt}"')
+        opt_prompt = bot_handler.get_response(
+            f'Please analyze the given prompt and optimize it by removing any grammatical errors, spelling mistakes, biases (such as gender, racial, or cultural biases), sensitive or personal information, inappropriate content (such as self-harm, violence, or explicit material), and any unclear or incomplete phrasing. Ensure the optimized prompt is structured for clarity, neutrality, and inclusivity, incorporating responsible AI principles making it more effective in generating meaningful and constructive responses only prompt no explanation.\n"{prompt}"'
+        )
 
         opt_bot_response = bot_handler.get_response(opt_prompt["response"])
 
@@ -230,9 +263,7 @@ async def get_voice_response(audio: Annotated[UploadFile, File()], language_code
             content={
                 "status": "success",
                 "data": {
-                    "bot_response": {
-                        "response": bot_response.get("response")
-                    },
+                    "bot_response": {"response": bot_response.get("response")},
                     "opt_bot_response": opt_bot_response,
                     "opt_prompt": opt_prompt,
                 },

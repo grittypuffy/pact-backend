@@ -42,6 +42,7 @@ class ChatModel(BaseModel):
     opt_prompt: str
     response: str
     opt_response: str
+    flagged: bool
     prompt_metrics: MetricsModel
     opt_prompt_metrics: MetricsModel
     created_at: datetime = Field(default_factory=datetime.utcnow)
