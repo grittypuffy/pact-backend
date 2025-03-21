@@ -44,15 +44,6 @@ async def get_bot_response(prompt: BotRequest):
         prompt = prompt.prompt
         metrics = Metrics()
         bot_response = bot_handler.get_response(prompt)
-
-        if bot_response.get("content_filter"):
-            return JSONResponse(
-                status_code=200,
-                content={
-                    "status": "success",
-                    "data": metrics.get_openai_metrics(bot_response, prompt),
-                },
-            )
         opt_prompt = bot_handler.get_response(
             f'Please analyze the given prompt and optimize it by removing any grammatical errors, spelling mistakes, biases (such as gender, racial, or cultural biases), sensitive or personal information, inappropriate content (such as self-harm, violence, or explicit material), and any unclear or incomplete phrasing. Ensure the optimized prompt is structured for clarity, neutrality, and inclusivity, making it more effective in generating meaningful and constructive responses only prompt no explanation."{prompt}"'
         )
@@ -60,6 +51,7 @@ async def get_bot_response(prompt: BotRequest):
         return JSONResponse(
             status_code=200,
             content={
+                "flagged": False,
                 "status": "success",
                 "data": {
                     "bot_response": bot_response,
@@ -69,6 +61,21 @@ async def get_bot_response(prompt: BotRequest):
                 },
             },
         )
+        if bot_response.get("content_filter"):
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "data": {
+                        "flagged": True,
+                        "metrics": metrics.get_openai_metrics(bot_response, prompt),
+                        "bot_response": {"response": "The provided prompt was filtered due to the prompt triggering the content management policy. Please modify your prompts"},
+                        "opt_bot_response": opt_bot_response,
+                        "opt_prompt": opt_prompt,
+                    },
+                },
+        )
+
     except Exception as e:
         logging.error(e)
         return JSONResponse(

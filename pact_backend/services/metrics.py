@@ -1,3 +1,4 @@
+import math
 import concurrent.futures
 import logging
 
@@ -158,12 +159,29 @@ class Metrics:
         violence, violence_severity = violence["filtered"], violence["severity"]
 
         hate_severity = self.azure_openai_metric_mapping.get(hate_severity.lower())
+
         self_harm_severity = self.azure_openai_metric_mapping.get(self_harm_severity.lower())
         sexual_severity = self.azure_openai_metric_mapping.get(sexual_severity.lower())
         violence_severity = self.azure_openai_metric_mapping.get(violence_severity.lower())
-        grammar = self.evaluate_grammar(query)
-        spell_check = self.evaluate_spell_check(query)
+        grammar = 0
+        spell_check = 0
+
         sensitive_info = self.evaluate_sensitive_info(query)
+        maxi = -1
+        if (
+            sensitive_info
+            and isinstance(sensitive_info, list)
+        ):
+            entities = sensitive_info[0].entities
+            for ele in entities:
+                maxi = max(maxi, ele.get("confidence_score", -1))
+
+            maxi = int(math.ceil((maxi * 5)))
+        else:
+            maxi = -1
+        sensitive_info = maxi
+
+
         return {
             "flagged": True,
             "grammar": grammar,

@@ -72,9 +72,9 @@ class BotHandler:
             if error_body.get("code") == "content_filter":
                 inner_error = error_body.get("innererror")
                 if (
-                    content_filter_result := inner_error.get("content_filter_result")
-                    and inner_error.get("code") == "ResponsibleAIPolicyViolation"
+                    inner_error.get("code") == "ResponsibleAIPolicyViolation"
                 ):
+                    content_filter_result = inner_error.get("content_filter_result")
                     return {
                         "response": "The provided prompt was filtered due to the prompt triggering the content management policy. Please modify your prompts.",
                         "content_filter": True,
