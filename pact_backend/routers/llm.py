@@ -94,7 +94,7 @@ async def get_metrics(payload: Metric_Request):
         opt_response = None
 
         if payload.flagged:
-            response = metrics.get_openai_metrics(payload.metrics, prompt)
+            response = metrics.get_openai_metrics(payload.metrics, payload.query)
             opt_response = metrics.evaluate_all(payload.opt_query, payload.opt_answer)
 
         else:
