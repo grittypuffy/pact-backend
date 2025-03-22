@@ -11,7 +11,6 @@ from fastapi.responses import JSONResponse
 
 from ..config import AppConfig, get_config
 from ..helpers.auth import get_hashed_password, verify_password, sign_jwt, decode_jwt, verify_jwt
-from ..helpers.filename import get_filename_hash
 from ..models.auth import SignInRequest, SignUpRequest, Token
 from ..services.metrics import Metrics
 from ..services.response import BotHandler
@@ -215,6 +214,7 @@ async def get_voice_response(
         user_id = token.get("user_id")
         username = token.get("username")
     content_type = audio.content_type
+    print(content_type)
     file_path, url = await upload_client.upload_file(user_id, username, audio)
 
     if not url:
@@ -228,7 +228,7 @@ async def get_voice_response(
         )
     prompt = None
     match content_type:
-        case "audio/wav":
+        case "audio/wav" | "video/webm":
             transcription = await upload_client.get_audio_transcription(
                 file_path, language_code
             )
@@ -271,6 +271,7 @@ async def get_voice_response(
                     "status": "success",
                     "data": {
                         "flagged": True,
+                        "prompt": transcripted_text,
                         "bot_response": {"response": "The provided prompt was filtered due to the prompt triggering the content management policy. Please modify your prompts"},
                         "opt_bot_response": opt_bot_response,
                         "opt_prompt": opt_prompt,
@@ -284,6 +285,7 @@ async def get_voice_response(
                 "status": "success",
                 "data": {
                     "flagged": False,
+                    "prompt": transcripted_text,
                     "bot_response": {"response": bot_response.get("response")},
                     "opt_bot_response": opt_bot_response,
                     "opt_prompt": opt_prompt,

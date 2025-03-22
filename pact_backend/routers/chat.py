@@ -20,7 +20,7 @@ async def get_chat(req: Request):
         HistoryCollection = db['history']
         history_cursor = HistoryCollection.find({"user_id":user_id},{"created_at": 0})
         history = await history_cursor.to_list()
-
+        history = list(reversed(history))
         chats = []
 
         if history:
@@ -28,7 +28,6 @@ async def get_chat(req: Request):
             for h in history:
                 chat_cursor = ChatCollection.find({"history_id":str(h["_id"])},{"created_at": 0})
                 chat = await chat_cursor.to_list()
-                chat = list(reversed(chat))
                 chat = [serializer(c) for c in chat]
                 chats.append({"history":serializer(h),"chats":chat})
         return JSONResponse(status_code=200,content={"status": "success","data": chats})

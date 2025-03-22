@@ -1,7 +1,9 @@
 import aiofiles
 import logging
 import os
+import datetime
 
+import ffmpeg
 from fastapi import UploadFile, File
 import azure.cognitiveservices.speech as speechsdk
 from azure.storage.blob import BlobClient, ContainerClient
@@ -21,26 +23,34 @@ class FileUpload:
 
     async def upload_file(self, user_id: str, username: str, file: UploadFile = File(...)):
         file_content: bytes = await file.read()
-        hashed_filename, digest = get_filename_hash(file.filename)
-        file_path = os.path.join(config.env.tmp_upload_dir, hashed_filename)
+        date_now = str(datetime.datetime.now())
+        hashed_filename, digest = get_filename_hash(date_now, file_extension=".webm")
+        file_path = os.path.join(config.env.tmp_upload_dir, f"{hashed_filename}.webm")
+
         async with aiofiles.open(file_path, mode='wb') as input_file:
             await input_file.write(file_content)
 
-        blob_client: BlobClient = self.uploads.get_blob_client(hashed_filename)
+        try:
+            wav_file = os.path.join(config.env.tmp_upload_dir, f"{hashed_filename}.wav")
+            ffmpeg.input(file_path).output(wav_file).run()
+            os.remove(file_path)
 
-        blob_client.upload_blob(
-            file_content,
-            overwrite=True,
-            metadata={
-                "user_id": user_id,
-                "username": username,
-                "filename": file.filename,
-                "id": digest
-            }
-        )
+            blob_client: BlobClient = self.uploads.get_blob_client(f"{hashed_filename}.wav")
+            blob_client.upload_blob(
+                file_content,
+                overwrite=True,
+                metadata={
+                    "user_id": user_id,
+                    "username": username,
+                    "filename": file.filename,
+                    "id": digest
+                }
+            )
 
-        return file_path, blob_client.url
-    
+            return wav_file, blob_client.url
+        except ffmpeg.Error as e:
+            raise e
+
     async def get_audio_transcription(self, file_path: str, language_code: str = "en-US"):
         speech_config = speechsdk.SpeechConfig(subscription=config.env.azure_stt_key, region=config.env.azure_stt_region)
         speech_config.speech_recognition_language=language_code
