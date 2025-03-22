@@ -145,52 +145,40 @@ class Metrics:
             }
         return results
 
-    # {'response': 'The provided prompt was filtered due to the prompt triggering the content management policy. Please modify your prompts.', 'content_filter': True, 'hate': {'filtered': False, 'severity': 'safe'}, 'jailbreak': {'filtered': False, 'detected': False}, 'self_harm': {'filtered': False, 'severity': 'safe'}, 'sexual': {'filtered': False, 'severity': 'safe'}, 'violence': {'filtered': True, 'severity': 'medium'}, 'error': True}
-
     def get_openai_metrics(self, metrics_response: object, query: str):
-        # print(metrics_response)
-
-        # hate_severity = self.azure_openai_metric_mapping.get(
-        #     metrics_response["hate"].get("severity", "safe").lower()
-        # )
-
-        # self_harm_severity = self.azure_openai_metric_mapping.get(
-        #     metrics_response["self_harm"].get("severity", "safe").lower()
-        # )
-        # sexual_severity = self.azure_openai_metric_mapping.get(
-        #     metrics_response["sexual"].get("severity", "safe").lower()
-        # )
-        # violence_severity = self.azure_openai_metric_mapping.get(
-        #     metrics_response["violence"].get("severity", "safe").lower()
-        # )
-        # jailbreak_attempt = metrics_response["jailbreak"].get("detected", False)
-        # grammar = 0
-        # spell_check = 0
-
-        # sensitive_info = self.evaluate_sensitive_info(query)
-        # maxi = 0
-        # if sensitive_info and isinstance(sensitive_info, list):
-        #     entities = sensitive_info[0].entities
-        #     for ele in entities:
-        #         maxi = max(maxi, ele.get("confidence_score", -1))
-
-        #     maxi = int(math.ceil((maxi * 5)))
-        # else:
-        #     maxi = 0
-        # sensitive_info = maxi
-
+        print(metrics_response)
         # {'flagged': True, 'grammar': 0, 'spell_check': 0, 'sensitive_info': 5, 'violence': 3, 'bias_gender': 0, 'bias_self_harm': 0, 'hate_unfairness': 0, 'jailbreak': False}
-
-
-
-        return {
-            "flagged": True,
-            "grammar": metrics_response["grammar"],
-            "spell_check": metrics_response["spell_check"],
-            "sensitive_info": metrics_response["sensitive_info"],
-            "violence": metrics_response["violence"],
-            "bias_gender": metrics_response["bias_gender"],
-            "bias_self_harm": metrics_response["bias_self_harm"],
-            "hate_unfairness": metrics_response["hate_unfairness"],
-            "jailbreak": metrics_response["jailbreak"],
-        }
+        # check if metrics_response has key flagged
+        if "flagged" in metrics_response:
+            return {
+                "flagged": True,
+                "grammar": metrics_response["grammar"],
+                "spell_check": metrics_response["spell_check"],
+                "sensitive_info": metrics_response["sensitive_info"],
+                "violence": metrics_response["violence"],
+                "bias_gender": metrics_response["bias_gender"],
+                "self_harm": metrics_response["self_harm"],
+                "hate_unfairness": metrics_response["hate_unfairness"],
+                "jailbreak": metrics_response["jailbreak"],
+            }
+        else:
+            # {'response': 'The provided prompt was filtered due to the prompt triggering the content management policy. Please modify your prompts.', 'content_filter': True, 'hate': {'filtered': False, 'severity': 'safe'}, 'jailbreak': {'filtered': False, 'detected': False}, 'self_harm': {'filtered': False, 'severity': 'safe'}, 'sexual': {'filtered': False, 'severity': 'safe'}, 'violence': {'filtered': True, 'severity': 'medium'}, 'error': True}
+            return {
+                "flagged": True,
+                "grammar": 0,
+                "spell_check": 0,
+                "sensitive_info": 0,
+                "violence": self.azure_openai_metric_mapping[
+                    metrics_response["violence"].get("severity", "safe")
+                ],
+                "hate_unfairness": self.azure_openai_metric_mapping[
+                    metrics_response["hate"].get("severity", "safe")
+                ],
+                "jailbreak": metrics_response["jailbreak"]["detected"],
+                "self_harm": self.azure_openai_metric_mapping[
+                    metrics_response["self_harm"].get("severity", "safe")
+                ],
+                "bias_gender" : self.azure_openai_metric_mapping[
+                    metrics_response["sexual"].get("severity", "safe")
+                ],
+            }

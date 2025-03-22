@@ -10,7 +10,13 @@ from fastapi import APIRouter, Response, Request, Cookie, File, Form, UploadFile
 from fastapi.responses import JSONResponse
 
 from ..config import AppConfig, get_config
-from ..helpers.auth import get_hashed_password, verify_password, sign_jwt, decode_jwt, verify_jwt
+from ..helpers.auth import (
+    get_hashed_password,
+    verify_password,
+    sign_jwt,
+    decode_jwt,
+    verify_jwt,
+)
 from ..models.auth import SignInRequest, SignUpRequest, Token
 from ..services.metrics import Metrics
 from ..services.response import BotHandler
@@ -55,13 +61,15 @@ async def get_bot_response(prompt: BotRequest):
                     "status": "success",
                     "data": {
                         "flagged": True,
-                        "bot_response": {"response": "The provided prompt was filtered due to the prompt triggering the content management policy. Please modify your prompts"},
+                        "bot_response": {
+                            "response": "The provided prompt was filtered due to the prompt triggering the content management policy. Please modify your prompts"
+                        },
                         "opt_bot_response": opt_bot_response,
                         "opt_prompt": opt_prompt,
-                        "metrics": metrics.get_openai_metrics(bot_response, prompt)
+                        "metrics": metrics.get_openai_metrics(bot_response, prompt),
                     },
                 },
-        )
+            )
 
         return JSONResponse(
             status_code=200,
@@ -72,7 +80,7 @@ async def get_bot_response(prompt: BotRequest):
                     "opt_bot_response": opt_bot_response,
                     "opt_prompt": opt_prompt,
                     "flagged": False,
-                    "metrics": None
+                    "metrics": None,
                 },
             },
         )
@@ -95,6 +103,51 @@ async def get_metrics(payload: Metric_Request):
         if payload.flagged:
             response = metrics.get_openai_metrics(payload.metrics, payload.query)
             opt_response = metrics.evaluate_all(payload.opt_query, payload.opt_answer)
+            opt_evaluation = {}
+            opt_evaluation["grammar"] = int(opt_response["grammar"])
+            opt_evaluation["spell_check"] = int(opt_response["spell_check"])
+            maxi = 0
+            if (
+                "sensitive_info" in opt_response
+                and isinstance(opt_response["sensitive_info"], list)
+                and opt_response["sensitive_info"]
+            ):
+                entities = opt_response["sensitive_info"][0].entities
+                for ele in entities:
+                    maxi = max(maxi, ele.get("confidence_score", 0))
+
+                maxi = int(math.floor(maxi * 5))
+            else:
+                maxi = 0
+            opt_evaluation["sensitive_info"] = maxi
+            opt_evaluation["violence"] = int(
+                opt_response["violence"]["violence_score"] * 5 / 7
+            )
+            opt_evaluation["bias_gender"] = int(
+                opt_response["bias_gender"]["sexual_score"] * 5 / 7
+            )
+            opt_evaluation["self_harm"] = int(
+                opt_response["bias_self_harm"]["self_harm_score"] * 5 / 7
+            )
+            opt_evaluation["hate_unfairness"] = int(
+                opt_response["hate_unfairness"]["hate_unfairness_score"] * 5 / 7
+            )
+            flag = "not computed"
+            for key in opt_response["jailbreak"]:
+                if opt_response["jailbreak"][key] == True:
+                    flag = True
+                    break
+                else:
+                    flag = False
+            opt_evaluation["jailbreak"] = flag
+
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "data": {"metrics": response, "opt_metrics": opt_evaluation},
+                },
+            )
 
         else:
             response = metrics.evaluate_all(payload.query, payload.answer)
@@ -272,12 +325,14 @@ async def get_voice_response(
                     "data": {
                         "flagged": True,
                         "prompt": transcripted_text,
-                        "bot_response": {"response": "The provided prompt was filtered due to the prompt triggering the content management policy. Please modify your prompts"},
+                        "bot_response": {
+                            "response": "The provided prompt was filtered due to the prompt triggering the content management policy. Please modify your prompts"
+                        },
                         "opt_bot_response": opt_bot_response,
                         "opt_prompt": opt_prompt,
                     },
                 },
-        )
+            )
 
         return JSONResponse(
             status_code=200,
