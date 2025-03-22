@@ -44,6 +44,9 @@ class EnvVarConfig(BaseSettings):
     uploads_container: str = "uploads"
     st_connection_string: str
 
+    # Anonymous usage
+    anonymous_user_id: str
+
     class EnvVarConfig:
         env_file = ".env"
         env_file_encoding = "utf-8"
