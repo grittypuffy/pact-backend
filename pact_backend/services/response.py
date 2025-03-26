@@ -100,4 +100,4 @@ class BotHandler:
                 "content_filter": False,
             }
 
-        return {"response": response.replace("\n", "").replace('"', "")}
+        return {"response": response.replace('"', "")}
